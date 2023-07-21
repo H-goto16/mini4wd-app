@@ -1,0 +1,27 @@
+{
+  "files.exclude": {
+    "**/node_modules": false
+  },
+  "editor.tabSize": 2,
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": [
+    "source.addMissingImports",
+    "source.fixAll.eslint"
+  ],
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "cSpell.words": [
+    "openapi",
+    "preinstall",
+    "tailwindcss",
+    "typesync",
+  ]
+}
