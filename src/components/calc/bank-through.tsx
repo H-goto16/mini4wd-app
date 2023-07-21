@@ -26,25 +26,25 @@ const BankThroughFront = () => {
     <>
       <div className="m-4">
         <h1 className="text-2xl text-center">バンクスルー(フロント)</h1>
-        <h2 className="text-lg my-3">バンク半径</h2>
+        <h2 className="text-lg my-3">バンク半径(mm)</h2>
         <input
           type="number"
           className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setBankR(Number(e.target.value))}
         />
-        <h2 className="text-lg my-3">タイヤ直径</h2>
+        <h2 className="text-lg my-3">タイヤ直径(mm)</h2>
         <input
           type="number"
           className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setTireD(Number(e.target.value))}
         />
-        <h2 className="text-lg my-3">ホイールベース</h2>
+        <h2 className="text-lg my-3">ホイールベース(mm)</h2>
         <input
           type="number"
           className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setWheelbase(Number(e.target.value))}
         />
-        <h2 className="text-lg my-3">ブレーク最低部の高さ</h2>
+        <h2 className="text-lg my-3">ブレーク最低部の高さ(mm)</h2>
         <input
           type="number"
           className="border border-b-violet-600 w-60 h-10 bg-gray-100"
