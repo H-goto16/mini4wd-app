@@ -50,7 +50,7 @@ const BankThroughFront = () => {
           className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setBreakH(Number(e.target.value))}
         />
-        <h1 className="text-center text-lg mt-4">{`ホイールからブレーキの距離は${frontBrakeDistance}mm必要です`}</h1>
+        <h1 className="text-center text-lg mt-4">{`ホイールからブレーキの距離は${frontBrakeDistance}mm以内です`}</h1>
       </div>
     </>
   );
