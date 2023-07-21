@@ -1,4 +1,3 @@
-import { inputClass } from "@/constants/className";
 import { useEffect, useState } from "react";
 
 const BankThroughFront = () => {
@@ -30,25 +29,25 @@ const BankThroughFront = () => {
         <h2 className="text-lg my-3">バンク半径</h2>
         <input
           type="number"
-          className={inputClass}
+          className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setBankR(Number(e.target.value))}
         />
         <h2 className="text-lg my-3">タイヤ直径</h2>
         <input
           type="number"
-          className={inputClass}
+          className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setTireD(Number(e.target.value))}
         />
         <h2 className="text-lg my-3">ホイールベース</h2>
         <input
           type="number"
-          className={inputClass}
+          className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setWheelbase(Number(e.target.value))}
         />
         <h2 className="text-lg my-3">ブレーク最低部の高さ</h2>
         <input
           type="number"
-          className={inputClass}
+          className="border border-b-violet-600 w-60 h-10 bg-gray-100"
           onChange={(e) => setBreakH(Number(e.target.value))}
         />
         <h1 className="text-center text-lg mt-4">{`ホイールからブレーキの距離は${frontBrakeDistance}mm必要です`}</h1>

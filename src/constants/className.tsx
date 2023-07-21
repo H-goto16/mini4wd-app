@@ -1,1 +1,0 @@
-export const inputClass = "border border-b-violet-600 w-60 h-10 bg-gray-100";
