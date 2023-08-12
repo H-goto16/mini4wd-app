@@ -21,8 +21,10 @@ const SpectrumAnalyzer: React.FC = () => {
         });
         const sourceNode = audioContext.createMediaStreamSource(stream);
 
+        // Disconnect the sourceNode from the destination to prevent audio output
+        sourceNode.disconnect();
+
         sourceNode.connect(analyserNode);
-        analyserNode.connect(audioContext.destination);
 
         const bufferLength = analyserNode.frequencyBinCount;
         dataArrayRef.current = new Uint8Array(bufferLength);
@@ -114,7 +116,6 @@ const SpectrumAnalyzer: React.FC = () => {
         onChange={(e) => setAudioBarHeight(Number(e.target.value))}
       />
       <p className="text-xl">{maxFrequency}</p>
-
     </div>
   );
 };
