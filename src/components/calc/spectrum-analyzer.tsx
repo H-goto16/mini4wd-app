@@ -107,15 +107,7 @@ const SpectrumAnalyzer: React.FC = () => {
 
             setRPM(motorRPM);
 
-            for (let i = 0; i < markerCount; i++) {
-              const freq = (freqStep * i * freqMax) / bufferLength;
-              const xPos = (canvas!.width / freqMax) * freq;
-              canvasCtx.fillText(
-                freq.toFixed(1) + " Hz",
-                xPos,
-                canvas!.height - 10
-              );
-            }
+
           };
 
           draw();
