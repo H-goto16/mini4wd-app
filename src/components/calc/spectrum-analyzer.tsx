@@ -13,7 +13,7 @@ const SpectrumAnalyzer: React.FC = () => {
       try {
         const audioContext = new AudioContext();
         const analyserNode = audioContext.createAnalyser();
-        analyserNode.fftSize = 256;
+        analyserNode.fftSize = 1024;
         analyserRef.current = analyserNode;
 
         const stream = await navigator.mediaDevices.getUserMedia({
