@@ -19,9 +19,10 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "cSpell.words": [
+    "audiomotion",
     "openapi",
     "preinstall",
     "tailwindcss",
-    "typesync",
+    "typesync"
   ]
 }
