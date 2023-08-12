@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Footer from "../common/footer";
 
 const BankThroughFront = () => {
   const [frontBrakeDistance, setFrontBrakeDistance] = useState(0);
@@ -52,6 +53,7 @@ const BankThroughFront = () => {
         />
         <h1 className="text-center text-lg mt-4">{`ホイールからブレーキの距離は${frontBrakeDistance}mm以内です`}</h1>
       </div>
+      <Footer />
     </>
   );
 };
