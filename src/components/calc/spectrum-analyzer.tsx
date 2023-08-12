@@ -4,6 +4,7 @@ const SpectrumAnalyzer: React.FC = () => {
   const [audioBarWidth, setAudioBarWidth] = useState(50);
   const [audioBarHeight, setAudioBarHeight] = useState(50);
   const [maxFrequency, setMaxFrequency] = useState(0);
+  const [RPM, setRPM] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
@@ -104,7 +105,7 @@ const SpectrumAnalyzer: React.FC = () => {
               audioContext.sampleRate
             );
 
-            console.log(motorRPM);
+            setRPM(motorRPM);
 
             for (let i = 0; i < markerCount; i++) {
               const freq = (freqStep * i * freqMax) / bufferLength;
@@ -150,6 +151,7 @@ const SpectrumAnalyzer: React.FC = () => {
         onChange={(e) => setAudioBarHeight(Number(e.target.value))}
       />
       <p className="text-xl">{maxFrequency}</p>
+      <p className="text-xl">{RPM}</p>
     </div>
   );
 };
