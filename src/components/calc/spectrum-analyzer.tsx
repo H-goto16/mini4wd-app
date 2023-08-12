@@ -8,6 +8,27 @@ const SpectrumAnalyzer: React.FC = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
 
+  const calculateMotorRPM = (
+    maxFrequency: number,
+    maxFrequencyIndex: number,
+    bufferLength: number,
+    sampleRate: number
+  ): number => {
+    // モーターの回転数を求めるための係数やパラメータを適切に設定してください
+    const calibrationFactor = 10; // 適切なキャリブレーション係数
+    const freqToRPMConversion = 60; // HzからRPMへの変換係数
+    const maxRPM = 10000; // モーターの最大回転数
+
+    // 最大周波数をRPMに変換
+    const maxRPMValue =
+      (maxFrequency * freqToRPMConversion * calibrationFactor) / sampleRate;
+
+    // 最大回転数が上限を超えないように制限
+    const motorRPM = Math.min(maxRPM, maxRPMValue);
+
+    return motorRPM;
+  };
+
   useEffect(() => {
     const startAudio = async () => {
       try {
@@ -76,6 +97,14 @@ const SpectrumAnalyzer: React.FC = () => {
 
             const markerCount = 5; // Adjust this to set the number of markers
             const freqStep = bufferLength / markerCount;
+            const motorRPM = calculateMotorRPM(
+              maxFreq,
+              maxFrequencyIndex,
+              bufferLength,
+              audioContext.sampleRate
+            );
+
+            console.log(motorRPM);
 
             for (let i = 0; i < markerCount; i++) {
               const freq = (freqStep * i * freqMax) / bufferLength;
