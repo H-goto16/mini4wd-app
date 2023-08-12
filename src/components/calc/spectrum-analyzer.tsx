@@ -56,13 +56,19 @@ const SpectrumAnalyzer: React.FC = () => {
               x += barWidth + 1;
             }
 
-            let maxFrequency = 0;
+            let maxFrequencyValue = 0; // 最大周波数の値を格納する変数
+            let maxFrequencyIndex = 0; // 最大周波数のインデックスを格納する変数
+
             for (let i = 0; i < bufferLength; i++) {
-              if (dataArrayRef.current![i] > maxFrequency) {
-                maxFrequency = dataArrayRef.current![i];
-                setMaxFrequency(maxFrequency);
+              if (dataArrayRef.current![i] > maxFrequencyValue) {
+                maxFrequencyValue = dataArrayRef.current![i];
+                maxFrequencyIndex = i;
               }
             }
+
+            const freqMax = audioContext.sampleRate / 2;
+            const maxFreq = (maxFrequencyIndex * freqMax) / bufferLength;
+            setMaxFrequency(Number(maxFreq.toFixed(1))); // 最大周波数をセット
 
             // Draw frequency markers
             canvasCtx.fillStyle = "#ffffff";
@@ -70,7 +76,6 @@ const SpectrumAnalyzer: React.FC = () => {
 
             const markerCount = 5; // Adjust this to set the number of markers
             const freqStep = bufferLength / markerCount;
-            const freqMax = audioContext.sampleRate / 2;
 
             for (let i = 0; i < markerCount; i++) {
               const freq = (freqStep * i * freqMax) / bufferLength;
