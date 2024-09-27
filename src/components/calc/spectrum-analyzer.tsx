@@ -6,7 +6,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
   const { canvasRef, frequencyGen } = useAudioVisualizer();
 
   const displayFrequencies = async () => {
-    for (const freq of frequencyGen) {
+    for (const freq of frequencyGen as any) {
       if (freq) {
         setMaxFrequency(freq);
       }
