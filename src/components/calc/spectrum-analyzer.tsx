@@ -11,11 +11,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
     gearRatio: 3.5,
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const {
-    canvasRef,
-    frequencyGen,
-    config: configuration,
-  } = useAudioVisualizer();
+  const { canvasRef, frequencyGen, audioAnalyzer } = useAudioVisualizer();
 
   const displayFrequencies = async () => {
     for (const freq of frequencyGen as any) {
@@ -64,6 +60,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
+      audioAnalyzer={audioAnalyzer}
         open={modalOpen}
         config={config}
         setOpen={setModalOpen}

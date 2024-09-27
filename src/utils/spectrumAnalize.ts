@@ -1,3 +1,48 @@
+export class MovingAverageFilter {
+  private windowSize: number;
+  private window: number[] = [];
+
+  constructor(windowSize: number) {
+    this.windowSize = windowSize;
+  }
+
+  public apply(inputValue: number): number {
+    this.window.push(inputValue);
+
+    if (this.window.length > this.windowSize) {
+      this.window.shift();
+    }
+
+    const sum = this.window.reduce((acc, val) => acc + val, 0);
+    return sum / this.window.length;
+  }
+
+  public setWindowSize(windowSize: number) {
+    this.windowSize = windowSize;
+    this.window = [];
+  }
+}
+
+export class LowPassFilter {
+  private alpha: number;
+  private previousValue: number;
+
+  constructor(alpha: number) {
+    this.alpha = alpha;
+    this.previousValue = 0;
+  }
+
+  public apply(inputValue: number): number {
+    const filteredValue =
+      this.alpha * inputValue + (1 - this.alpha) * this.previousValue;
+    this.previousValue = filteredValue;
+    return filteredValue;
+  }
+  public setCoefficient(coefficient: number) {
+    this.alpha = coefficient;
+  }
+}
+
 export class AudioAnalyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
@@ -5,6 +50,12 @@ export class AudioAnalyzer {
   private stream: MediaStream | null = null;
   private dataArray: Uint8Array = new Uint8Array(0);
   private animationId: number = 0;
+
+  private lowPassFilter: LowPassFilter;
+  private movingAverageFilter: MovingAverageFilter;
+
+  private applyLowPass: boolean = true;
+  private applyMovingAverage: boolean = true;
 
   public config = {
     fft_size: 2048 * 2,
@@ -17,6 +68,11 @@ export class AudioAnalyzer {
       max_line_color: "red",
     },
   };
+
+  constructor() {
+    this.lowPassFilter = new LowPassFilter(0.1);
+    this.movingAverageFilter = new MovingAverageFilter(5);
+  }
 
   public getMicrophoneAudioStream = async (
     canvasRef: React.RefObject<HTMLCanvasElement>
@@ -41,11 +97,30 @@ export class AudioAnalyzer {
     }
   };
 
+  public setLowPassCoefficient(coefficient: number) {
+    this.lowPassFilter.setCoefficient(coefficient);
+  }
+
+  public toggleLowPassFilter(apply: boolean) {
+    this.applyLowPass = apply;
+  }
+
+  public setMovingAverageWindowSize(windowSize: number) {
+    this.movingAverageFilter.setWindowSize(windowSize);
+  }
+
+  public toggleMovingAverageFilter(apply: boolean) {
+    this.applyMovingAverage = apply;
+  }
+
   public *getMaxFrequencyGenerator(): Generator<number | null, void, unknown> {
     while (true) {
       if (this.audioContext && this.analyser) {
         this.analyser.getByteFrequencyData(this.dataArray);
-        const maxIndex = this.getMaxFrequencyIndex(this.dataArray);
+
+        const filteredDataArray = this.applyFilters(this.dataArray);
+
+        const maxIndex = this.getMaxFrequencyIndex(filteredDataArray);
         const maxFrequency =
           (maxIndex * this.audioContext.sampleRate) / this.analyser.fftSize;
         yield maxFrequency;
@@ -53,6 +128,24 @@ export class AudioAnalyzer {
         yield null;
       }
     }
+  }
+
+  private applyFilters(dataArray: Uint8Array): Uint8Array {
+    const filteredArray = new Uint8Array(dataArray.length);
+    for (let i = 0; i < dataArray.length; i++) {
+      let value = dataArray[i];
+
+      if (this.applyLowPass) {
+        value = this.lowPassFilter.apply(value);
+      }
+
+      if (this.applyMovingAverage) {
+        value = this.movingAverageFilter.apply(value);
+      }
+
+      filteredArray[i] = value;
+    }
+    return filteredArray;
   }
 
   private getMaxFrequencyIndex = (dataArray: Uint8Array): number => {
@@ -69,15 +162,56 @@ export class AudioAnalyzer {
     return maxIndex;
   };
 
+  private calculateDerivative(dataArray: Uint8Array): number[] {
+    const derivatives = [];
+    for (let i = 1; i < dataArray.length; i++) {
+      const currentValue = dataArray[i];
+      const previousValue = dataArray[i - 1];
+      const derivative = currentValue - previousValue;
+      derivatives.push(derivative);
+    }
+    return derivatives;
+  }
+
+  private getSharpestChangeIndex(derivatives: number[]): number | null {
+    let maxIndex: number | null = null;
+    let maxValue = -Infinity;
+
+    for (let i = 0; i < derivatives.length; i++) {
+      if (Math.abs(derivatives[i]) > maxValue) {
+        maxValue = Math.abs(derivatives[i]);
+        maxIndex = i;
+      }
+    }
+
+    return maxIndex;
+  }
+
   private renderFrame(canvas: HTMLCanvasElement, bufferLength: number) {
     if (this.analyser) {
       this.analyser.getByteFrequencyData(this.dataArray);
+      const derivatives = this.calculateDerivative(this.dataArray);
+      const sharpestChangeIndex = this.getSharpestChangeIndex(derivatives);
+
       this.drawFrequencyData(
         canvas,
         this.dataArray,
         bufferLength,
         this.audioContext!.sampleRate
       );
+
+      const canvasCtx = canvas.getContext("2d");
+      if (canvasCtx && sharpestChangeIndex !== null) {
+        const sliceWidth = canvas.width / bufferLength;
+        const sharpX = sharpestChangeIndex * sliceWidth;
+
+        canvasCtx.strokeStyle = "blue";
+        canvasCtx.lineWidth = 2;
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(sharpX, 0);
+        canvasCtx.lineTo(sharpX, canvas.height);
+        canvasCtx.stroke();
+      }
     }
     this.animationId = requestAnimationFrame(() =>
       this.renderFrame(canvas, bufferLength)
@@ -123,7 +257,6 @@ export class AudioAnalyzer {
     canvasCtx.fillStyle = this.config.canvas.font_color;
     canvasCtx.font = this.config.canvas.font;
     canvasCtx.fillText("Frequency (Hz)", WIDTH - 100, HEIGHT - 10);
-
     canvasCtx.save();
     canvasCtx.translate(10, HEIGHT / 2);
     canvasCtx.rotate(-Math.PI / 2);
