@@ -44,7 +44,7 @@ export class AudioAnalyzer {
 
   private renderFrame(canvas: HTMLCanvasElement, bufferLength: number) {
     if (this.analyser) {
-      this.analyser.getByteFrequencyData(this.dataArray); // 周波数データを取得
+      this.analyser.getByteFrequencyData(this.dataArray);
       this.drawFrequencyData(
         canvas,
         this.dataArray,
