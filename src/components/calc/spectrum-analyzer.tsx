@@ -1,8 +1,15 @@
 import useAudioVisualizer from "@/hooks/useAudioVisualizer";
 import { useEffect, useState } from "react";
 import MotorConfigurationModal from "../modal/MotorConfigurationModal";
-import { Button } from "antd";
+import { Button, Progress } from "antd";
 import { ConfigType } from "@/types/config";
+import Speedometer, {
+  Arc,
+  Background,
+  DangerPath,
+  Marks,
+  Needle,
+} from "react-speedometer/dist";
 
 const MicrophoneFrequencyVisualizer: React.FC = () => {
   const [maxFrequency, setMaxFrequency] = useState<number>(0);
@@ -14,6 +21,9 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [calcInterval, setCalcInterval] = useState<number>(1000);
+  const [viewMode, setViewMode] = useState<"graph" | "tachometer">(
+    "tachometer"
+  );
   const { canvasRef, audioAnalyzer } = useAudioVisualizer();
 
   useEffect(() => {
@@ -40,24 +50,48 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       }
     }, calcInterval);
 
-    // クリーンアップ
     return () => {
       clearInterval(interval);
       audioAnalyzer.close();
     };
-  }, []);
+  }, [calcInterval]);
+
   return (
     <>
       <div className="flex justify-center flex-wrap">
         <canvas
+          style={{ display: viewMode === "graph" ? "block" : "none" }}
           ref={canvasRef}
           width={window.innerWidth - 20}
           height={window.innerHeight / 2}
         />
+        {viewMode === "tachometer" && (
+          <Speedometer
+            value={
+              Math.round(
+                config.using_derivative
+                  ? sharpestFrequency * 10
+                  : maxFrequency * 10
+              ) / 1000
+            }
+            max={45}
+            fontFamily="squada-one"
+          >
+            <Background opacity={0.9} />
+            <Arc arcWidth={2} />
+            <Needle baseOffset={40} circleRadius={10} circleColor="red" />
+            <DangerPath color="#00A600" angle={150} arcWidth={5} />
+            <DangerPath color="#ffff00" angle={100} arcWidth={5} />
+            <DangerPath arcWidth={5} />
+            <Marks step={1.5} />
+          </Speedometer>
+        )}
       </div>
       <div className="text-center mt-3">
         <p
-          className={config.using_derivative ? "text-blue-700" : "text-red-600"}
+          className={`${
+            config.using_derivative ? "text-blue-700" : "text-red-600"
+          } font-bold`}
         >
           {config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}
         </p>
@@ -92,6 +126,14 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       <div className="flex justify-center">
         <Button className="" onClick={() => setModalOpen(true)}>
           設定
+        </Button>
+        <Button
+          className="ml-3"
+          onClick={() =>
+            setViewMode(viewMode === "graph" ? "tachometer" : "graph")
+          }
+        >
+          {viewMode === "graph" ? "タコメーター" : "グラフ"}
         </Button>
       </div>
       <MotorConfigurationModal
