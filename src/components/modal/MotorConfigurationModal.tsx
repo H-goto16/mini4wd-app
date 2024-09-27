@@ -9,8 +9,18 @@ const MotorConfigurationModal = (props: {
   config: ConfigType;
   open: boolean;
   audioAnalyzer: AudioAnalyzer;
+  calcInterval: number;
+  setCalcInterval: Dispatch<SetStateAction<number>>;
 }) => {
-  const { setConfig, open, setOpen, config, audioAnalyzer } = props;
+  const {
+    setConfig,
+    open,
+    setOpen,
+    config,
+    audioAnalyzer,
+    calcInterval,
+    setCalcInterval,
+  } = props;
   const [lowPass, setLowPass] = useState(false);
   const [movingAverage, setMovingAverage] = useState(false);
   return (
@@ -98,6 +108,14 @@ const MotorConfigurationModal = (props: {
           className="shadow-md"
           onChange={(e) => setConfig({ ...config, using_derivative: e })}
           defaultValue={false}
+        />
+      </div>
+      <div className="p-3">
+        <p className="">更新時間</p>
+        <Input
+          type="number"
+          onChange={(e) => setCalcInterval(Number(e.target.value))}
+          defaultValue={calcInterval}
         />
       </div>
     </Modal>

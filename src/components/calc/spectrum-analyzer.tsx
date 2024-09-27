@@ -13,6 +13,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
     using_derivative: false,
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [calcInterval, setCalcInterval] = useState<number>(1000);
   const { canvasRef, audioAnalyzer } = useAudioVisualizer();
 
   useEffect(() => {
@@ -37,7 +38,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
           setSharpestFrequency(sharpFreq.frequency);
         }
       }
-    }, 50);
+    }, calcInterval);
 
     // クリーンアップ
     return () => {
@@ -55,7 +56,11 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         />
       </div>
       <div className="text-center mt-3">
-        <p className={config.using_derivative ? "text-blue-700" : "text-red-600"}>{config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}</p>
+        <p
+          className={config.using_derivative ? "text-blue-700" : "text-red-600"}
+        >
+          {config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}
+        </p>
       </div>
       <div className="flex justify-evenly my-8">
         <div>
@@ -90,6 +95,8 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
+        calcInterval={calcInterval}
+        setCalcInterval={setCalcInterval}
         audioAnalyzer={audioAnalyzer}
         open={modalOpen}
         config={config}
