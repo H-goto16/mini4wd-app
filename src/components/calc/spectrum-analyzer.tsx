@@ -54,6 +54,9 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
           height={window.innerHeight / 2}
         />
       </div>
+      <div className="text-center mt-3">
+        <p className={config.using_derivative ? "text-blue-700" : "text-red-600"}>{config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}</p>
+      </div>
       <div className="flex justify-evenly my-8">
         <div>
           <span className="italic font-bold ">
