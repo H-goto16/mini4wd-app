@@ -162,6 +162,34 @@ export class AudioAnalyzer {
     return maxIndex;
   };
 
+  public *getSharpestChangeGenerator(): Generator<
+    { frequency: number | null; maxValue: number | null },
+    void,
+    unknown
+  > {
+    while (true) {
+      if (this.audioContext && this.analyser) {
+        this.analyser.getByteFrequencyData(this.dataArray);
+        const derivatives = this.calculateDerivative(this.dataArray);
+        const sharpestChangeIndex = this.getSharpestChangeIndex(derivatives);
+
+        let frequency: number | null = null;
+        let maxValue: number | null = null;
+
+        if (sharpestChangeIndex !== null) {
+          frequency =
+            (sharpestChangeIndex * this.audioContext.sampleRate) /
+            this.analyser.fftSize;
+          maxValue = Math.abs(derivatives[sharpestChangeIndex]);
+        }
+
+        yield { frequency, maxValue };
+      } else {
+        yield { frequency: null, maxValue: null };
+      }
+    }
+  }
+
   private calculateDerivative(dataArray: Uint8Array): number[] {
     const derivatives = [];
     for (let i = 1; i < dataArray.length; i++) {

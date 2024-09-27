@@ -5,8 +5,6 @@ const useAudioVisualizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioAnalyzer = new AudioAnalyzer();
 
-  const frequencyGen = audioAnalyzer.getMaxFrequencyGenerator();
-
   useEffect(() => {
     audioAnalyzer.getMicrophoneAudioStream(canvasRef);
     return () => {
@@ -14,7 +12,7 @@ const useAudioVisualizer = () => {
     };
   }, []);
 
-  return { canvasRef, frequencyGen, audioAnalyzer };
+  return { canvasRef, audioAnalyzer };
 };
 
 export default useAudioVisualizer;

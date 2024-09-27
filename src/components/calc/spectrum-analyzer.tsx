@@ -1,27 +1,50 @@
 import useAudioVisualizer from "@/hooks/useAudioVisualizer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MotorConfigurationModal from "../modal/MotorConfigurationModal";
 import { Button } from "antd";
 import { ConfigType } from "@/types/config";
 
 const MicrophoneFrequencyVisualizer: React.FC = () => {
   const [maxFrequency, setMaxFrequency] = useState<number>(0);
+  const [sharpestFrequency, setSharpestFrequency] = useState<number>(0);
   const [config, setConfig] = useState<ConfigType>({
     tireDiameter: 23,
     gearRatio: 3.5,
+    using_derivative: false,
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const { canvasRef, frequencyGen, audioAnalyzer } = useAudioVisualizer();
+  const { canvasRef, audioAnalyzer } = useAudioVisualizer();
 
-  const displayFrequencies = async () => {
-    for (const freq of frequencyGen as any) {
-      if (freq) {
-        setMaxFrequency(freq);
+  useEffect(() => {
+    const startAudioStream = async () => {
+      await audioAnalyzer.getMicrophoneAudioStream(canvasRef);
+    };
+
+    startAudioStream();
+
+    const maxFrequencyGenerator = audioAnalyzer.getMaxFrequencyGenerator();
+    const sharpestChangeGenerator = audioAnalyzer.getSharpestChangeGenerator();
+
+    const interval = setInterval(() => {
+      const maxFreq = maxFrequencyGenerator.next().value;
+      const sharpFreq = sharpestChangeGenerator.next().value;
+
+      if (maxFreq) {
+        setMaxFrequency(maxFreq);
       }
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  };
-  displayFrequencies();
+      if (sharpFreq) {
+        if (sharpFreq && sharpFreq.frequency !== null) {
+          setSharpestFrequency(sharpFreq.frequency);
+        }
+      }
+    }, 50);
+
+    // クリーンアップ
+    return () => {
+      clearInterval(interval);
+      audioAnalyzer.close();
+    };
+  }, []);
   return (
     <>
       <div className="flex justify-center flex-wrap">
@@ -34,7 +57,11 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       <div className="flex justify-evenly my-8">
         <div>
           <span className="italic font-bold ">
-            {Math.round(maxFrequency * 10)}
+            {Math.round(
+              config.using_derivative
+                ? sharpestFrequency * 10
+                : maxFrequency * 10
+            )}
           </span>
           rpm
         </div>
@@ -60,7 +87,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
-      audioAnalyzer={audioAnalyzer}
+        audioAnalyzer={audioAnalyzer}
         open={modalOpen}
         config={config}
         setOpen={setModalOpen}

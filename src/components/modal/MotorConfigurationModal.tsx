@@ -92,6 +92,14 @@ const MotorConfigurationModal = (props: {
           disabled={!movingAverage}
         />
       </div>
+      <div className="p-3">
+        <p className="">計測に最大値ではなく微分値を使用する</p>
+        <Switch
+          className="shadow-md"
+          onChange={(e) => setConfig({ ...config, using_derivative: e })}
+          defaultValue={false}
+        />
+      </div>
     </Modal>
   );
 };
