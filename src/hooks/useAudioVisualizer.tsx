@@ -14,7 +14,7 @@ const useAudioVisualizer = () => {
     };
   }, []);
 
-  return { canvasRef, frequencyGen };
+  return { canvasRef, frequencyGen, config: audioAnalyzer.config };
 };
 
 export default useAudioVisualizer;
