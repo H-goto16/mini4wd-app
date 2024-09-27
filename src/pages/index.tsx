@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-
+import { Button } from "antd";
 const Home = () => {
   const router = useRouter();
 
@@ -8,15 +8,16 @@ const Home = () => {
     { key: 2, name: "モーター", path: "/motor" },
   ];
   return (
-    <div className="p-4">
+    <div className="p-4 text-center">
       {pushList.map((item) => (
-        <button
+        <Button
+          type="default"
+          className="m-2 w-[200px] h-[50px]"
           key={item.key}
-          className="text-2xl my-4 block"
           onClick={() => router.push(item.path)}
         >
-          ・{item.name}
-        </button>
+          {item.name}
+        </Button>
       ))}
     </div>
   );

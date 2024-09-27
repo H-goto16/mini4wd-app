@@ -10,7 +10,6 @@ const Footer = () => {
         >
           バンクスルーブレーキの寸法計算｜A.J.
         </a>
-        <p className="text-xs mt-2">サイト運営 : @lldoraga</p>
       </div>
     </footer>
   );

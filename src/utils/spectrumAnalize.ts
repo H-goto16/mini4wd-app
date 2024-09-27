@@ -7,13 +7,14 @@ export class AudioAnalyzer {
   private animationId: number = 0;
 
   private config = {
-    fft_size: 2048,
-    sample_rate: 44100,
+    fft_size: 2048 * 2,
+    sample_rate: 44100 * 2,
     canvas: {
       background_color: "white",
       line_color: "black",
       font: "10px Arial",
       font_color: "black",
+      max_line_color: "red"
     },
   };
 
@@ -21,9 +22,7 @@ export class AudioAnalyzer {
     canvasRef: React.RefObject<HTMLCanvasElement>
   ) => {
     try {
-      // get user media
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // this any is needed because of the webkitAudioContext
       this.audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
       this.source = this.audioContext.createMediaStreamSource(this.stream);
@@ -42,6 +41,35 @@ export class AudioAnalyzer {
     }
   };
 
+  // 最大周波数をリアルタイムに返すジェネレータ関数
+  public *getMaxFrequencyGenerator(): Generator<number | null, void, unknown> {
+    while (true) {
+      if (this.audioContext && this.analyser) {
+        this.analyser.getByteFrequencyData(this.dataArray);
+        const maxIndex = this.getMaxFrequencyIndex(this.dataArray);
+        const maxFrequency = (maxIndex * this.audioContext.sampleRate) / this.analyser.fftSize;
+        yield maxFrequency; // 最大周波数を返す
+      } else {
+        yield null; // オーディオがまだ準備されていない場合
+      }
+    }
+  }
+
+  // 最大周波数のインデックスを取得するヘルパー関数
+  private getMaxFrequencyIndex = (dataArray: Uint8Array): number => {
+    let maxVal = -Infinity;
+    let maxIndex = 0;
+
+    for (let i = 0; i < dataArray.length; i++) {
+      if (dataArray[i] > maxVal) {
+        maxVal = dataArray[i];
+        maxIndex = i;
+      }
+    }
+
+    return maxIndex;
+  };
+
   private renderFrame(canvas: HTMLCanvasElement, bufferLength: number) {
     if (this.analyser) {
       this.analyser.getByteFrequencyData(this.dataArray);
@@ -55,23 +83,6 @@ export class AudioAnalyzer {
     this.animationId = requestAnimationFrame(() =>
       this.renderFrame(canvas, bufferLength)
     );
-  }
-
-  public getFrequencyData(): Uint8Array {
-    if (this.analyser) {
-      this.analyser.getByteFrequencyData(this.dataArray);
-    }
-    return this.dataArray;
-  }
-
-  public close(): void {
-    if (this.audioContext) {
-      this.audioContext.close();
-    }
-    if (this.stream) {
-      this.stream.getTracks().forEach((track) => track.stop());
-    }
-    cancelAnimationFrame(this.animationId);
   }
 
   private drawFrequencyData = (
@@ -91,6 +102,7 @@ export class AudioAnalyzer {
     canvasCtx.lineWidth = 2;
     canvasCtx.strokeStyle = this.config.canvas.line_color;
     canvasCtx.beginPath();
+
     const sliceWidth = WIDTH / bufferLength;
     let x = 0;
 
@@ -109,22 +121,52 @@ export class AudioAnalyzer {
 
     canvasCtx.stroke();
 
-    // x label
+    // X軸のラベル描画
     canvasCtx.fillStyle = this.config.canvas.font_color;
     canvasCtx.font = this.config.canvas.font;
     canvasCtx.fillText("Frequency (Hz)", WIDTH - 100, HEIGHT - 10);
-    // y label
+
+    // Y軸のラベル描画
     canvasCtx.save();
     canvasCtx.translate(10, HEIGHT / 2);
     canvasCtx.rotate(-Math.PI / 2);
     canvasCtx.fillText("Amplitude (dB)", 0, 0);
     canvasCtx.restore();
+
+    // 周波数目盛りを描画
     const nyquist = sampleRate / 2;
-    const step = bufferLength / 10;
     for (let i = 0; i <= 10; i++) {
       const frequency = (i * nyquist) / 10;
       const labelX = (i * WIDTH) / 10;
       canvasCtx.fillText(frequency.toFixed(0) + "Hz", labelX, HEIGHT - 20);
     }
+
+    // 最大周波数のインデックスを取得
+    const maxIndex = this.getMaxFrequencyIndex(dataArray);
+    const maxX = maxIndex * sliceWidth;
+
+    // 赤い線を描画
+    canvasCtx.strokeStyle = this.config.canvas.max_line_color || 'red'; // 赤色
+    canvasCtx.lineWidth = 2;
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(maxX, 0);
+    canvasCtx.lineTo(maxX, HEIGHT);
+    canvasCtx.stroke();
+
+    // 最大振幅の周波数を計算して表示
+    const maxFrequency = (maxIndex * sampleRate) / this.config.fft_size;
+    canvasCtx.fillStyle = 'red';
+    canvasCtx.fillText(`Max Freq: ${maxFrequency.toFixed(2)} Hz`, maxX, 20);
   };
+
+  // 音声ストリームとアニメーションを停止する処理
+  public close(): void {
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => track.stop());
+    }
+    cancelAnimationFrame(this.animationId);
+  }
 }

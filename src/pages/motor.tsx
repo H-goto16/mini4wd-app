@@ -4,7 +4,9 @@ const Spectrum = dynamic(() => import("../components/calc/spectrum-analyzer"), {
 });
 
 const Motor = () => {
-  return <Spectrum />;
+  return (
+  <Spectrum />
+  );
 };
 
 export default Motor;

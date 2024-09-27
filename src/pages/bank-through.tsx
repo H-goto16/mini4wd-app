@@ -1,9 +1,5 @@
-import BankThroughFront from "@/components/calc/bank-through"
+import BankThroughFront from "@/components/calc/bank-through";
 
-const bankThrough = () => {
-  return (
-    <BankThroughFront />
-  )
-}
+const bankThrough = () => <BankThroughFront />;
 
 export default bankThrough;
