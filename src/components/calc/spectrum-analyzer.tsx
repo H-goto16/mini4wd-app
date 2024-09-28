@@ -108,7 +108,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         <div className="">
           <span className="italic font-bold">
             {Math.round(
-              (2 *
+              (
                 Math.PI *
                 config.tireDiameter *
                 0.001 *
