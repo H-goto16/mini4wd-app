@@ -21,9 +21,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [calcInterval, setCalcInterval] = useState<number>(1000);
-  const [viewMode, setViewMode] = useState<"graph" | "tachometer">(
-    "tachometer"
-  );
+  const [viewMode, setViewMode] = useState<"graph" | "tachometer">("tachometer");
   const { canvasRef, audioAnalyzer } = useAudioVisualizer();
 
   useEffect(() => {
@@ -44,8 +42,8 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         setMaxFrequency(maxFreq);
       }
       if (sharpFreq) {
-        if (sharpFreq && sharpFreq.frequency !== null) {
-          setSharpestFrequency(sharpFreq.frequency);
+        if (sharpFreq && sharpFreq !== null) {
+          setSharpestFrequency(sharpFreq.frequency || 0);
         }
       }
     }, calcInterval);
@@ -137,6 +135,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
+        canvasRef={canvasRef}
         calcInterval={calcInterval}
         setCalcInterval={setCalcInterval}
         audioAnalyzer={audioAnalyzer}

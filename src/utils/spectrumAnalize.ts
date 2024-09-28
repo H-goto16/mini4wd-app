@@ -56,22 +56,30 @@ export class AudioAnalyzer {
 
   private applyLowPass: boolean = true;
   private applyMovingAverage: boolean = true;
+  private bufferLength: number = 0;
 
   public config = {
     fft_size: 2048 * 2,
     sample_rate: 44100 * 2,
+    minFrequency: 2000,
+    maxFrequency: 5000,
     canvas: {
       background_color: "white",
       line_color: "black",
       font: "10px Arial",
       font_color: "black",
       max_line_color: "red",
+      diff_line_color: "blue",
+      out_of_range_color: "rgba(255, 0, 0, 0.3)",
     },
   };
 
   constructor() {
     this.lowPassFilter = new LowPassFilter(0.1);
     this.movingAverageFilter = new MovingAverageFilter(5);
+  }
+  public updateCanvas(canvas: HTMLCanvasElement) {
+    this.renderFrame(canvas);
   }
 
   public getMicrophoneAudioStream = async (
@@ -86,14 +94,15 @@ export class AudioAnalyzer {
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = this.config.fft_size;
       const bufferLength = this.analyser.frequencyBinCount;
+      this.bufferLength = bufferLength;
       this.dataArray = new Uint8Array(bufferLength);
 
       this.source.connect(this.analyser);
 
       const canvas = canvasRef.current!;
-      this.renderFrame(canvas, bufferLength);
+      this.renderFrame(canvas);
     } catch (err) {
-      throw "マイクの使用許可がありません";
+      throw err;
     }
   };
 
@@ -113,6 +122,11 @@ export class AudioAnalyzer {
     this.applyMovingAverage = apply;
   }
 
+  public setFrequencyRange(minFreq: number, maxFreq: number) {
+    this.config.minFrequency = minFreq;
+    this.config.maxFrequency = maxFreq;
+  }
+
   public *getMaxFrequencyGenerator(): Generator<number | null, void, unknown> {
     while (true) {
       if (this.audioContext && this.analyser) {
@@ -120,9 +134,14 @@ export class AudioAnalyzer {
 
         const filteredDataArray = this.applyFilters(this.dataArray);
 
-        const maxIndex = this.getMaxFrequencyIndex(filteredDataArray);
+        const maxIndex = this.getMaxFrequencyIndexInRange(
+          filteredDataArray,
+          this.audioContext.sampleRate
+        );
         const maxFrequency =
-          (maxIndex * this.audioContext.sampleRate) / this.analyser.fftSize;
+          maxIndex !== null
+            ? (maxIndex * this.audioContext.sampleRate) / this.analyser.fftSize
+            : null;
         yield maxFrequency;
       } else {
         yield null;
@@ -148,20 +167,6 @@ export class AudioAnalyzer {
     return filteredArray;
   }
 
-  private getMaxFrequencyIndex = (dataArray: Uint8Array): number => {
-    let maxVal = -Infinity;
-    let maxIndex = 0;
-
-    for (let i = 0; i < dataArray.length; i++) {
-      if (dataArray[i] > maxVal) {
-        maxVal = dataArray[i];
-        maxIndex = i;
-      }
-    }
-
-    return maxIndex;
-  };
-
   public *getSharpestChangeGenerator(): Generator<
     { frequency: number | null; maxValue: number | null },
     void,
@@ -171,7 +176,12 @@ export class AudioAnalyzer {
       if (this.audioContext && this.analyser) {
         this.analyser.getByteFrequencyData(this.dataArray);
         const derivatives = this.calculateDerivative(this.dataArray);
-        const sharpestChangeIndex = this.getSharpestChangeIndex(derivatives);
+        const sharpestChangeIndex = this.getSharpestChangeIndexInRange(
+          derivatives,
+          this.config.minFrequency,
+          this.config.maxFrequency,
+          this.audioContext!.sampleRate
+        );
 
         let frequency: number | null = null;
         let maxValue: number | null = null;
@@ -201,38 +211,34 @@ export class AudioAnalyzer {
     return derivatives;
   }
 
-  private getSharpestChangeIndex(derivatives: number[]): number | null {
-    let maxIndex: number | null = null;
-    let maxValue = -Infinity;
-
-    for (let i = 0; i < derivatives.length; i++) {
-      if (Math.abs(derivatives[i]) > maxValue) {
-        maxValue = Math.abs(derivatives[i]);
-        maxIndex = i;
-      }
-    }
-
-    return maxIndex;
-  }
-
-  private renderFrame(canvas: HTMLCanvasElement, bufferLength: number) {
+  private renderFrame(canvas: HTMLCanvasElement) {
     if (this.analyser) {
       this.analyser.getByteFrequencyData(this.dataArray);
+
       const derivatives = this.calculateDerivative(this.dataArray);
-      const sharpestChangeIndex = this.getSharpestChangeIndex(derivatives);
+
+      const sharpestChangeIndexInRange = this.getSharpestChangeIndexInRange(
+        derivatives,
+        this.config.minFrequency,
+        this.config.maxFrequency,
+        this.audioContext!.sampleRate
+      );
 
       this.drawFrequencyData(
         canvas,
         this.dataArray,
-        bufferLength,
-        this.audioContext!.sampleRate
+        this.bufferLength,
+        this.audioContext!.sampleRate,
+        this.config.minFrequency,
+        this.config.maxFrequency
       );
 
       const canvasCtx = canvas.getContext("2d");
-      if (canvasCtx && sharpestChangeIndex !== null) {
-        const sliceWidth = canvas.width / bufferLength;
-        const sharpX = sharpestChangeIndex * sliceWidth;
+      const sliceWidth = canvas.width / this.bufferLength;
+      const nyquist = this.audioContext!.sampleRate / 2;
 
+      if (canvasCtx && sharpestChangeIndexInRange !== null) {
+        const sharpX = sharpestChangeIndexInRange * sliceWidth;
         canvasCtx.strokeStyle = "blue";
         canvasCtx.lineWidth = 2;
         canvasCtx.beginPath();
@@ -241,16 +247,41 @@ export class AudioAnalyzer {
         canvasCtx.stroke();
       }
     }
-    this.animationId = requestAnimationFrame(() =>
-      this.renderFrame(canvas, bufferLength)
-    );
+
+    this.animationId = requestAnimationFrame(() => this.renderFrame(canvas));
+  }
+
+  private getSharpestChangeIndexInRange(
+    derivatives: number[],
+    minFrequency: number,
+    maxFrequency: number,
+    sampleRate: number
+  ): number | null {
+    const nyquist = sampleRate / 2;
+
+    const minIndex = Math.floor((minFrequency / nyquist) * this.bufferLength);
+    const maxIndex = Math.ceil((maxFrequency / nyquist) * this.bufferLength);
+
+    let maxDerivative = -Infinity;
+    let sharpestChangeIndex = null;
+
+    for (let i = minIndex; i <= maxIndex; i++) {
+      if (derivatives[i] > maxDerivative) {
+        maxDerivative = derivatives[i];
+        sharpestChangeIndex = i;
+      }
+    }
+
+    return sharpestChangeIndex;
   }
 
   private drawFrequencyData = (
     canvas: HTMLCanvasElement,
     dataArray: Uint8Array,
     bufferLength: number,
-    sampleRate: number
+    sampleRate: number,
+    minFrequency: number,
+    maxFrequency: number
   ) => {
     const canvasCtx = canvas.getContext("2d");
     if (!canvasCtx) return;
@@ -260,21 +291,28 @@ export class AudioAnalyzer {
     canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
     canvasCtx.fillStyle = this.config.canvas.background_color;
     canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-    canvasCtx.lineWidth = 2;
-    canvasCtx.strokeStyle = this.config.canvas.line_color;
-    canvasCtx.beginPath();
 
     const sliceWidth = WIDTH / bufferLength;
+    const nyquist = sampleRate / 2;
+
     let x = 0;
 
     for (let i = 0; i < bufferLength; i++) {
-      const value = dataArray[i] / 255.0;
-      const y = HEIGHT - value * HEIGHT;
+      const frequency = (i * nyquist) / bufferLength;
 
-      if (i === 0) {
-        canvasCtx.moveTo(x, y);
+      if (frequency >= minFrequency && frequency <= maxFrequency) {
+        const value = dataArray[i] / 255.0;
+        const y = HEIGHT - value * HEIGHT;
+
+        canvasCtx.strokeStyle = this.config.canvas.line_color;
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
       } else {
-        canvasCtx.lineTo(x, y);
+        canvasCtx.fillStyle = this.config.canvas.out_of_range_color;
+        canvasCtx.fillRect(x, 0, sliceWidth, HEIGHT);
       }
 
       x += sliceWidth;
@@ -285,33 +323,106 @@ export class AudioAnalyzer {
     canvasCtx.fillStyle = this.config.canvas.font_color;
     canvasCtx.font = this.config.canvas.font;
     canvasCtx.fillText("Frequency (Hz)", WIDTH - 100, HEIGHT - 10);
+
     canvasCtx.save();
     canvasCtx.translate(10, HEIGHT / 2);
     canvasCtx.rotate(-Math.PI / 2);
     canvasCtx.fillText("Amplitude (dB)", 0, 0);
     canvasCtx.restore();
 
-    const nyquist = sampleRate / 2;
     for (let i = 0; i <= 10; i++) {
       const frequency = (i * nyquist) / 10;
       const labelX = (i * WIDTH) / 10;
       canvasCtx.fillText(frequency.toFixed(0) + "Hz", labelX, HEIGHT - 20);
     }
 
-    const maxIndex = this.getMaxFrequencyIndex(dataArray);
-    const maxX = maxIndex * sliceWidth;
+    const maxIndex = this.getMaxFrequencyIndexInRange(dataArray, sampleRate);
+    if (maxIndex !== null) {
+      const maxX = maxIndex * sliceWidth;
+      canvasCtx.strokeStyle = this.config.canvas.max_line_color;
+      canvasCtx.lineWidth = 2;
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(maxX, 0);
+      canvasCtx.lineTo(maxX, HEIGHT);
+      canvasCtx.stroke();
+    }
 
-    canvasCtx.strokeStyle = this.config.canvas.max_line_color || "red";
+    this.drawDifferentiatedLine(
+      canvasCtx,
+      dataArray,
+      bufferLength,
+      sliceWidth,
+      sampleRate,
+      HEIGHT
+    );
+  };
+  private getMaxFrequencyIndexInRange(
+    dataArray: Uint8Array,
+    sampleRate: number
+  ): number | null {
+    const nyquist = sampleRate / 2;
+    const bufferLength = dataArray.length;
+    let maxVal = -Infinity;
+    let maxIndex: number | null = null;
+
+    for (let i = 0; i < bufferLength; i++) {
+      const frequency = (i * nyquist) / bufferLength;
+
+      if (
+        frequency >= this.config.minFrequency &&
+        frequency <= this.config.maxFrequency
+      ) {
+        if (dataArray[i] > maxVal) {
+          maxVal = dataArray[i];
+          maxIndex = i;
+        }
+      }
+    }
+
+    return maxIndex;
+  }
+
+  private drawDifferentiatedLine(
+    canvasCtx: CanvasRenderingContext2D,
+    dataArray: Uint8Array,
+    bufferLength: number,
+    sliceWidth: number,
+    sampleRate: number,
+    canvasHeight: number
+  ) {
+    const nyquist = sampleRate / 2;
+    canvasCtx.strokeStyle = this.config.canvas.diff_line_color;
     canvasCtx.lineWidth = 2;
     canvasCtx.beginPath();
-    canvasCtx.moveTo(maxX, 0);
-    canvasCtx.lineTo(maxX, HEIGHT);
-    canvasCtx.stroke();
 
-    const maxFrequency = (maxIndex * sampleRate) / this.config.fft_size;
-    canvasCtx.fillStyle = "red";
-    canvasCtx.fillText(`Max Freq: ${maxFrequency.toFixed(2)} Hz`, maxX, 20);
-  };
+    let prevY = null;
+
+    for (let i = 1; i < bufferLength; i++) {
+      const frequency = (i * nyquist) / bufferLength;
+      if (
+        frequency >= this.config.minFrequency &&
+        frequency <= this.config.maxFrequency
+      ) {
+        const currentValue = dataArray[i] / 255.0;
+        const prevValue = dataArray[i - 1] / 255.0;
+        const diff = Math.abs(currentValue - prevValue);
+
+        const y = canvasHeight - diff * canvasHeight;
+
+        const x = i * sliceWidth;
+
+        if (prevY !== null) {
+          canvasCtx.lineTo(x, y);
+        } else {
+          canvasCtx.moveTo(x, y);
+        }
+
+        prevY = y;
+      }
+    }
+
+    canvasCtx.stroke();
+  }
 
   public close(): void {
     if (this.audioContext) {

@@ -11,6 +11,7 @@ const MotorConfigurationModal = (props: {
   audioAnalyzer: AudioAnalyzer;
   calcInterval: number;
   setCalcInterval: Dispatch<SetStateAction<number>>;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }) => {
   const {
     setConfig,
@@ -20,9 +21,10 @@ const MotorConfigurationModal = (props: {
     audioAnalyzer,
     calcInterval,
     setCalcInterval,
+    canvasRef,
   } = props;
-  const [lowPass, setLowPass] = useState(false);
-  const [movingAverage, setMovingAverage] = useState(false);
+  const [lowPass, setLowPass] = useState(true);
+  const [movingAverage, setMovingAverage] = useState(true);
   return (
     <Modal
       open={open}
@@ -64,7 +66,7 @@ const MotorConfigurationModal = (props: {
             audioAnalyzer.toggleLowPassFilter(e);
             setLowPass(e);
           }}
-          defaultValue={false}
+          defaultValue={true}
         />
         <Input
           className="my-3"
@@ -88,7 +90,7 @@ const MotorConfigurationModal = (props: {
             audioAnalyzer.toggleMovingAverageFilter(e);
             setMovingAverage(e);
           }}
-          defaultValue={false}
+          defaultValue={true}
         />
         <Input
           type="number"
@@ -117,6 +119,38 @@ const MotorConfigurationModal = (props: {
           onChange={(e) => setCalcInterval(Number(e.target.value))}
           defaultValue={calcInterval}
         />
+      </div>
+      <div className="p-3">
+        <p className="">計測する範囲(Hz)</p>
+        <div className="flex">
+          <Input
+            type="number"
+            onChange={(e) => {
+              audioAnalyzer.setFrequencyRange(
+                Number(e.target.value),
+                audioAnalyzer.config.maxFrequency
+              );
+              if (canvasRef.current) {
+                audioAnalyzer.updateCanvas(canvasRef.current);
+              }
+            }}
+            defaultValue={audioAnalyzer.config.minFrequency}
+          />{" "}
+          <span className="mx-2 translate-y-2"> ~ </span>
+          <Input
+            type="number"
+            onChange={(e) => {
+              audioAnalyzer.setFrequencyRange(
+                audioAnalyzer.config.minFrequency,
+                Number(e.target.value)
+              );
+              if (canvasRef.current) {
+                audioAnalyzer.updateCanvas(canvasRef.current);
+              }
+            }}
+            defaultValue={audioAnalyzer.config.maxFrequency}
+          />
+        </div>
       </div>
     </Modal>
   );
