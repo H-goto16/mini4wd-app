@@ -12,19 +12,17 @@ import Speedometer, {
 } from "react-speedometer/dist";
 
 const MicrophoneFrequencyVisualizer: React.FC = () => {
+  const { canvasRef, audioAnalyzer } = useAudioVisualizer();
   const [maxFrequency, setMaxFrequency] = useState<number>(0);
   const [sharpestFrequency, setSharpestFrequency] = useState<number>(0);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [config, setConfig] = useState<ConfigType>({
     tireDiameter: 23,
     gearRatio: 3.5,
     using_derivative: false,
+    calcInterval: 500,
+    viewMode: "tachometer",
   });
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [calcInterval, setCalcInterval] = useState<number>(500);
-  const [viewMode, setViewMode] = useState<"graph" | "tachometer">(
-    "tachometer"
-  );
-  const { canvasRef, audioAnalyzer } = useAudioVisualizer();
   const [audioConfig, setAudioConfig] = useState(audioAnalyzer.config);
 
   useEffect(() => {
@@ -49,13 +47,13 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
           setSharpestFrequency(sharpFreq.frequency || 0);
         }
       }
-    }, calcInterval);
+    }, config.calcInterval);
 
     return () => {
       clearInterval(interval);
       audioAnalyzer.close();
     };
-  }, [calcInterval]);
+  }, [config.calcInterval]);
 
   useEffect(() => {
     audioAnalyzer.config = audioConfig;
@@ -65,12 +63,12 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
     <>
       <div className="flex justify-center flex-wrap">
         <canvas
-          style={{ display: viewMode === "graph" ? "block" : "none" }}
+          style={{ display: config.viewMode === "graph" ? "block" : "none" }}
           ref={canvasRef}
           width={window.innerWidth - 20}
           height={window.innerHeight / 2}
         />
-        {viewMode === "tachometer" && (
+        {config.viewMode === "tachometer" && (
           <div className="pt-10">
             <Speedometer
               value={
@@ -136,17 +134,18 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         <Button
           className="ml-3"
           onClick={() =>
-            setViewMode(viewMode === "graph" ? "tachometer" : "graph")
+            setConfig({
+              ...config,
+              viewMode: config.viewMode === "graph" ? "tachometer" : "graph",
+            })
           }
         >
-          {viewMode === "graph" ? "タコメーター" : "グラフ"}
+          {config.viewMode === "graph" ? "タコメーター" : "グラフ"}
         </Button>
       </div>
       <MotorConfigurationModal
         setAudioConfig={setAudioConfig}
         canvasRef={canvasRef}
-        calcInterval={calcInterval}
-        setCalcInterval={setCalcInterval}
         audioAnalyzer={audioAnalyzer}
         open={modalOpen}
         config={config}

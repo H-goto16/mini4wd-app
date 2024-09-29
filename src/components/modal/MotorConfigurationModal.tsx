@@ -9,8 +9,6 @@ const MotorConfigurationModal = (props: {
   config: ConfigType;
   open: boolean;
   audioAnalyzer: AudioAnalyzer;
-  calcInterval: number;
-  setCalcInterval: Dispatch<SetStateAction<number>>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   setAudioConfig: Dispatch<SetStateAction<any>>;
 }) => {
@@ -20,8 +18,6 @@ const MotorConfigurationModal = (props: {
     setOpen,
     config,
     audioAnalyzer,
-    calcInterval,
-    setCalcInterval,
     canvasRef,
     setAudioConfig,
   } = props;
@@ -118,8 +114,8 @@ const MotorConfigurationModal = (props: {
         <p className="">更新時間</p>
         <Input
           type="number"
-          onChange={(e) => setCalcInterval(Number(e.target.value))}
-          defaultValue={calcInterval}
+          onChange={(e) => setConfig({...config, calcInterval: Number(e.target.value)})}
+          defaultValue={config.calcInterval}
         />
       </div>
       <div className="p-3">
@@ -139,12 +135,13 @@ const MotorConfigurationModal = (props: {
           <span className="mx-2 translate-y-2"> ~ </span>
           <Input
             type="number"
-            disabled
-            onChange={(e) =>
+            onChange={(e) => {
+
               setAudioConfig({
                 ...config,
                 maxFrequency: Number(e.target.value),
               })
+            }
             }
             defaultValue={audioAnalyzer.config.maxFrequency}
           />
