@@ -1,4 +1,5 @@
 import { AudioAnalyzer } from "@/utils/spectrumAnalize";
+import { config } from "process";
 import { useRef, useEffect, useState } from "react";
 
 const useAudioVisualizer = () => {

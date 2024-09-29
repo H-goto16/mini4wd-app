@@ -61,7 +61,7 @@ export class AudioAnalyzer {
   public config = {
     fft_size: 2048 * 2,
     sample_rate: 44100 * 2,
-    minFrequency: 2000,
+    minFrequency: 1000,
     maxFrequency: 5000,
     canvas: {
       background_color: "white",
@@ -346,15 +346,6 @@ export class AudioAnalyzer {
       canvasCtx.lineTo(maxX, HEIGHT);
       canvasCtx.stroke();
     }
-
-    this.drawDifferentiatedLine(
-      canvasCtx,
-      dataArray,
-      bufferLength,
-      sliceWidth,
-      sampleRate,
-      HEIGHT
-    );
   };
   private getMaxFrequencyIndexInRange(
     dataArray: Uint8Array,

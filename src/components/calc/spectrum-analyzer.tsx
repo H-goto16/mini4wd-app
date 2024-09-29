@@ -20,9 +20,12 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
     using_derivative: false,
   });
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [calcInterval, setCalcInterval] = useState<number>(1000);
-  const [viewMode, setViewMode] = useState<"graph" | "tachometer">("tachometer");
+  const [calcInterval, setCalcInterval] = useState<number>(500);
+  const [viewMode, setViewMode] = useState<"graph" | "tachometer">(
+    "tachometer"
+  );
   const { canvasRef, audioAnalyzer } = useAudioVisualizer();
+  const [audioConfig, setAudioConfig] = useState(audioAnalyzer.config);
 
   useEffect(() => {
     const startAudioStream = async () => {
@@ -53,6 +56,10 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       audioAnalyzer.close();
     };
   }, [calcInterval]);
+
+  useEffect(() => {
+    audioAnalyzer.config = audioConfig;
+  }, [audioConfig, setAudioConfig]);
 
   return (
     <>
@@ -96,20 +103,21 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       </div>
       <div className="flex justify-evenly my-8">
         <div>
-          <span className="italic font-bold ">
-            {Math.round(
-              config.using_derivative
-                ? sharpestFrequency * 10
-                : maxFrequency * 10
-            )}
+          <span className="italic font-bold text-red-500">
+            {Math.round(maxFrequency * 10)}
+          </span>
+          rpm
+        </div>
+        <div>
+          <span className="italic font-bold text-blue-600">
+            {Math.round(sharpestFrequency * 10)}
           </span>
           rpm
         </div>
         <div className="">
           <span className="italic font-bold">
             {Math.round(
-              (
-                Math.PI *
+              (Math.PI *
                 config.tireDiameter *
                 0.001 *
                 (maxFrequency * 10) *
@@ -135,6 +143,7 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
+        setAudioConfig={setAudioConfig}
         canvasRef={canvasRef}
         calcInterval={calcInterval}
         setCalcInterval={setCalcInterval}

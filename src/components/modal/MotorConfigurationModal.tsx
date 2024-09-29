@@ -12,6 +12,7 @@ const MotorConfigurationModal = (props: {
   calcInterval: number;
   setCalcInterval: Dispatch<SetStateAction<number>>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  setAudioConfig: Dispatch<SetStateAction<any>>;
 }) => {
   const {
     setConfig,
@@ -22,6 +23,7 @@ const MotorConfigurationModal = (props: {
     calcInterval,
     setCalcInterval,
     canvasRef,
+    setAudioConfig,
   } = props;
   const [lowPass, setLowPass] = useState(true);
   const [movingAverage, setMovingAverage] = useState(true);
@@ -125,29 +127,23 @@ const MotorConfigurationModal = (props: {
         <div className="flex">
           <Input
             type="number"
-            onChange={(e) => {
-              audioAnalyzer.setFrequencyRange(
-                Number(e.target.value),
-                audioAnalyzer.config.maxFrequency
-              );
-              if (canvasRef.current) {
-                audioAnalyzer.updateCanvas(canvasRef.current);
-              }
-            }}
+            onChange={(e) =>
+              setAudioConfig({
+                ...config,
+                minFrequency: Number(e.target.value),
+              })
+            }
             defaultValue={audioAnalyzer.config.minFrequency}
           />{" "}
           <span className="mx-2 translate-y-2"> ~ </span>
           <Input
             type="number"
-            onChange={(e) => {
-              audioAnalyzer.setFrequencyRange(
-                audioAnalyzer.config.minFrequency,
-                Number(e.target.value)
-              );
-              if (canvasRef.current) {
-                audioAnalyzer.updateCanvas(canvasRef.current);
-              }
-            }}
+            onChange={(e) =>
+              setAudioConfig({
+                ...config,
+                maxFrequency: Number(e.target.value),
+              })
+            }
             defaultValue={audioAnalyzer.config.maxFrequency}
           />
         </div>
