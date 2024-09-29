@@ -71,25 +71,27 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
           height={window.innerHeight / 2}
         />
         {viewMode === "tachometer" && (
-          <Speedometer
-            value={
-              Math.round(
-                config.using_derivative
-                  ? sharpestFrequency * 10
-                  : maxFrequency * 10
-              ) / 1000
-            }
-            max={45}
-            fontFamily="squada-one"
-          >
-            <Background opacity={0.9} />
-            <Arc arcWidth={2} />
-            <Needle baseOffset={40} circleRadius={10} circleColor="red" />
-            <DangerPath color="#00A600" angle={150} arcWidth={5} />
-            <DangerPath color="#ffff00" angle={100} arcWidth={5} />
-            <DangerPath arcWidth={5} />
-            <Marks step={1.5} />
-          </Speedometer>
+          <div className="pt-10">
+            <Speedometer
+              value={
+                Math.round(
+                  config.using_derivative
+                    ? sharpestFrequency * 10
+                    : maxFrequency * 10
+                ) / 1000
+              }
+              max={45}
+              fontFamily="squada-one"
+            >
+              <Background opacity={0.9} />
+              <Arc arcWidth={2} />
+              <Needle baseOffset={40} circleRadius={10} circleColor="red" />
+              <DangerPath color="#00A600" angle={150} arcWidth={5} />
+              <DangerPath color="#ffff00" angle={100} arcWidth={5} />
+              <DangerPath arcWidth={5} />
+              <Marks step={1.5} />
+            </Speedometer>
+          </div>
         )}
       </div>
       <div className="text-center mt-3">
@@ -101,21 +103,19 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
           {config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}
         </p>
       </div>
-      <div className="flex justify-evenly my-8">
-        <div>
-          <span className="italic font-bold text-red-500">
-            {Math.round(maxFrequency * 10)}
-          </span>
-          rpm
-        </div>
-        <div>
-          <span className="italic font-bold text-blue-600">
-            {Math.round(sharpestFrequency * 10)}
-          </span>
+      <div className="flex justify-center my-8">
+        <div className="mr-4">
+          <span className="italic font-bold text-xl">
+            {Math.round(
+              config.using_derivative
+                ? sharpestFrequency * 10
+                : maxFrequency * 10
+            )}
+          </span>{" "}
           rpm
         </div>
         <div className="">
-          <span className="italic font-bold">
+          <span className="italic font-bold text-xl">
             {Math.round(
               (Math.PI *
                 config.tireDiameter *

@@ -123,10 +123,11 @@ const MotorConfigurationModal = (props: {
         />
       </div>
       <div className="p-3">
-        <p className="">計測する範囲(Hz)</p>
+        <p className="">計測する範囲(Hz) 調整中</p>
         <div className="flex">
           <Input
             type="number"
+            disabled
             onChange={(e) =>
               setAudioConfig({
                 ...config,
@@ -138,6 +139,7 @@ const MotorConfigurationModal = (props: {
           <span className="mx-2 translate-y-2"> ~ </span>
           <Input
             type="number"
+            disabled
             onChange={(e) =>
               setAudioConfig({
                 ...config,
