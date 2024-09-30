@@ -1,25 +1,3 @@
 {
-  "plugins": [
-    "sort-keys-custom-order",
-    "simple-import-sort",
-    "import",
-    "unused-imports",
-    "tailwindcss"
-  ],
-  "extends": ["next/core-web-vitals", "plugin:tailwindcss/recommended"],
-  "rules": {
-    "simple-import-sort/imports": "error",
-    "simple-import-sort/exports": "error",
-    "import/first": "error",
-    "import/newline-after-import": "error",
-    "import/no-duplicates": "error",
-    "unused-imports/no-unused-imports": "error"
-  },
-  "settings": {
-    "tailwindcss": {
-      "groupByResponsive": true,
-      "whitelist": []
-    }
-  }
+  "extends": ["next/core-web-vitals"]
 }
-
