@@ -1,8 +1,7 @@
 import useAudioVisualizer from "@/hooks/useAudioVisualizer";
 import { useEffect, useState } from "react";
 import MotorConfigurationModal from "../modal/MotorConfigurationModal";
-import { Button, Progress } from "antd";
-import { ConfigType } from "@/types/config";
+import { Button } from "antd";
 import Speedometer, {
   Arc,
   Background,
@@ -12,18 +11,10 @@ import Speedometer, {
 } from "react-speedometer/dist";
 
 const MicrophoneFrequencyVisualizer: React.FC = () => {
-  const { canvasRef, audioAnalyzer } = useAudioVisualizer();
+  const { canvasRef, audioAnalyzer, config, setConfig } = useAudioVisualizer();
   const [maxFrequency, setMaxFrequency] = useState<number>(0);
   const [sharpestFrequency, setSharpestFrequency] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [config, setConfig] = useState<ConfigType>({
-    tireDiameter: 23,
-    gearRatio: 3.5,
-    using_derivative: false,
-    calcInterval: 500,
-    viewMode: "tachometer",
-  });
-  const [audioConfig, setAudioConfig] = useState(audioAnalyzer.config);
 
   useEffect(() => {
     const startAudioStream = async () => {
@@ -42,10 +33,8 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       if (maxFreq) {
         setMaxFrequency(maxFreq);
       }
-      if (sharpFreq) {
-        if (sharpFreq && sharpFreq !== null) {
-          setSharpestFrequency(sharpFreq.frequency || 0);
-        }
+      if (sharpFreq && sharpFreq !== null) {
+        setSharpestFrequency(sharpFreq.frequency || 0);
       }
     }, config.calcInterval);
 
@@ -54,11 +43,6 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
       audioAnalyzer.close();
     };
   }, [config.calcInterval]);
-
-  useEffect(() => {
-    audioAnalyzer.config = audioConfig;
-  }, [audioConfig, setAudioConfig]);
-
   return (
     <>
       <div className="flex justify-center flex-wrap">
@@ -144,9 +128,6 @@ const MicrophoneFrequencyVisualizer: React.FC = () => {
         </Button>
       </div>
       <MotorConfigurationModal
-        setAudioConfig={setAudioConfig}
-        canvasRef={canvasRef}
-        audioAnalyzer={audioAnalyzer}
         open={modalOpen}
         config={config}
         setOpen={setModalOpen}

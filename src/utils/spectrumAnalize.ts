@@ -63,6 +63,9 @@ export class AudioAnalyzer {
     sample_rate: 44100 * 2,
     minFrequency: 1000,
     maxFrequency: 5000,
+    bufferLength: 0,
+    lowPassCoefficient: 0.1,
+    movingAverageWindowSize: 5,
     canvas: {
       background_color: "white",
       line_color: "black",
@@ -75,8 +78,10 @@ export class AudioAnalyzer {
   };
 
   constructor() {
-    this.lowPassFilter = new LowPassFilter(0.1);
-    this.movingAverageFilter = new MovingAverageFilter(5);
+    this.lowPassFilter = new LowPassFilter(this.config.lowPassCoefficient);
+    this.movingAverageFilter = new MovingAverageFilter(
+      this.config.movingAverageWindowSize
+    );
   }
   public updateCanvas(canvas: HTMLCanvasElement) {
     this.renderFrame(canvas);

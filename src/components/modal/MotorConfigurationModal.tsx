@@ -1,28 +1,14 @@
 import { ConfigType } from "@/types/config";
-import { AudioAnalyzer } from "@/utils/spectrumAnalize";
 import { Input, Modal, Switch } from "antd";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
 
 const MotorConfigurationModal = (props: {
   setOpen: Dispatch<SetStateAction<boolean>>;
   setConfig: Dispatch<SetStateAction<ConfigType>>;
   config: ConfigType;
   open: boolean;
-  audioAnalyzer: AudioAnalyzer;
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  setAudioConfig: Dispatch<SetStateAction<any>>;
 }) => {
-  const {
-    setConfig,
-    open,
-    setOpen,
-    config,
-    audioAnalyzer,
-    canvasRef,
-    setAudioConfig,
-  } = props;
-  const [lowPass, setLowPass] = useState(true);
-  const [movingAverage, setMovingAverage] = useState(true);
+  const { setConfig, open, setOpen, config } = props;
   return (
     <Modal
       open={open}
@@ -60,23 +46,31 @@ const MotorConfigurationModal = (props: {
         <p className="">Low Pass Filter</p>
         <Switch
           className="shadow-md"
-          onChange={(e) => {
-            audioAnalyzer.toggleLowPassFilter(e);
-            setLowPass(e);
-          }}
-          defaultValue={true}
+          onChange={(e) =>
+            setConfig({
+              ...config,
+              lowPassConfig: { ...config.lowPassConfig, isUse: e },
+            })
+          }
+          defaultValue={config.lowPassConfig.isUse}
         />
         <Input
           className="my-3"
           type="number"
           onChange={(e) =>
-            audioAnalyzer.setLowPassCoefficient(Number(e.target.value))
+            setConfig({
+              ...config,
+              lowPassConfig: {
+                ...config.lowPassConfig,
+                cofficient: Number(e.target.value),
+              },
+            })
           }
           min={0}
           max={1}
           step={0.1}
-          defaultValue={0.5}
-          disabled={!lowPass}
+          defaultValue={config.lowPassConfig.cofficient}
+          disabled={!config.lowPassConfig.isUse}
         />
       </div>
 
@@ -84,22 +78,30 @@ const MotorConfigurationModal = (props: {
         <p className="">Moving Average Filter</p>
         <Switch
           className="shadow-md"
-          onChange={(e) => {
-            audioAnalyzer.toggleMovingAverageFilter(e);
-            setMovingAverage(e);
-          }}
-          defaultValue={true}
+          onChange={(e) =>
+            setConfig({
+              ...config,
+              movingAverageConfig: { ...config.movingAverageConfig, isUse: e },
+            })
+          }
+          defaultValue={config.movingAverageConfig.isUse}
         />
         <Input
           type="number"
           className="my-3"
           onChange={(e) =>
-            audioAnalyzer.setMovingAverageWindowSize(Number(e.target.value))
+            setConfig({
+              ...config,
+              movingAverageConfig: {
+                ...config.movingAverageConfig,
+                windowSize: Number(e.target.value),
+              },
+            })
           }
           min={0}
           step={1}
-          defaultValue={5}
-          disabled={!movingAverage}
+          defaultValue={config.movingAverageConfig.windowSize}
+          disabled={!config.movingAverageConfig.isUse}
         />
       </div>
       <div className="p-3">
@@ -107,14 +109,16 @@ const MotorConfigurationModal = (props: {
         <Switch
           className="shadow-md"
           onChange={(e) => setConfig({ ...config, using_derivative: e })}
-          defaultValue={false}
+          defaultValue={config.using_derivative}
         />
       </div>
       <div className="p-3">
         <p className="">更新時間</p>
         <Input
           type="number"
-          onChange={(e) => setConfig({...config, calcInterval: Number(e.target.value)})}
+          onChange={(e) =>
+            setConfig({ ...config, calcInterval: Number(e.target.value) })
+          }
           defaultValue={config.calcInterval}
         />
       </div>
@@ -123,27 +127,24 @@ const MotorConfigurationModal = (props: {
         <div className="flex">
           <Input
             type="number"
-            disabled
             onChange={(e) =>
-              setAudioConfig({
+              setConfig({
                 ...config,
                 minFrequency: Number(e.target.value),
               })
             }
-            defaultValue={audioAnalyzer.config.minFrequency}
+            defaultValue={config.minFrequency}
           />{" "}
           <span className="mx-2 translate-y-2"> ~ </span>
           <Input
             type="number"
             onChange={(e) => {
-
-              setAudioConfig({
+              setConfig({
                 ...config,
                 maxFrequency: Number(e.target.value),
-              })
-            }
-            }
-            defaultValue={audioAnalyzer.config.maxFrequency}
+              });
+            }}
+            defaultValue={config.maxFrequency}
           />
         </div>
       </div>
