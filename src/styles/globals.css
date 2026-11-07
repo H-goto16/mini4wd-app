@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply min-h-screen bg-slate-100 text-slate-900 antialiased transition-colors;
+}
+html.dark body {
+  background: radial-gradient(
+      1200px 600px at 50% -10%,
+      #1b2030 0%,
+      #0b0d12 60%
+    )
+    fixed;
+  @apply text-slate-100;
+}
+
+.font-digital {
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}

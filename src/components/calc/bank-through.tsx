@@ -33,7 +33,7 @@ const BankThroughFront = () => {
             <h2 className="text-lg my-3">バンク半径(mm)</h2>
             <Input
               type="number"
-              className="border border-b-violet-600 w-60 h-10 bg-gray-100"
+              className="border border-b-violet-600 w-60 h-10 bg-gray-100 dark:bg-white/10 dark:text-white px-2 rounded"
               onChange={(e) => setBankR(Number(e.target.value))}
             />
           </div>
@@ -41,7 +41,7 @@ const BankThroughFront = () => {
             <h2 className="text-lg my-3">タイヤ直径(mm)</h2>
             <Input
               type="number"
-              className="border border-b-violet-600 w-60 h-10 bg-gray-100"
+              className="border border-b-violet-600 w-60 h-10 bg-gray-100 dark:bg-white/10 dark:text-white px-2 rounded"
               onChange={(e) => setTireD(Number(e.target.value))}
             />
           </div>
@@ -49,7 +49,7 @@ const BankThroughFront = () => {
             <h2 className="text-lg my-3">ホイールベース(mm)</h2>
             <Input
               type="number"
-              className="border border-b-violet-600 w-60 h-10 bg-gray-100"
+              className="border border-b-violet-600 w-60 h-10 bg-gray-100 dark:bg-white/10 dark:text-white px-2 rounded"
               onChange={(e) => setWheelbase(Number(e.target.value))}
             />
           </div>
@@ -57,7 +57,7 @@ const BankThroughFront = () => {
             <h2 className="text-lg my-3">ブレーク最低部の高さ(mm)</h2>
             <Input
               type="number"
-              className="border border-b-violet-600 w-60 h-10 bg-gray-100"
+              className="border border-b-violet-600 w-60 h-10 bg-gray-100 dark:bg-white/10 dark:text-white px-2 rounded"
               onChange={(e) => setBreakH(Number(e.target.value))}
             />
           </div>

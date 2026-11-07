@@ -5,7 +5,7 @@ const Footer = () => {
       <div className="m-4">
         <h3 className="text-sm">参考文献 : </h3>
         <a
-          className="text-blue-500 border-b-blue-500"
+          className="text-sky-500 border-b-sky-500"
           href="https://note.com/agw8823/n/naacba84e896f"
         >
           バンクスルーブレーキの寸法計算｜A.J.

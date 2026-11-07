@@ -1,33 +1,33 @@
 import { configState } from "@/jotai/configState";
-import { AudioAnalyzer } from "@/utils/spectrumAnalize";
-import { useAtom } from "jotai";
+import { themeState } from "@/jotai/themeState";
+import { AudioAnalyzer, DARK_THEME, LIGHT_THEME } from "@/utils/spectrumAnalize";
+import { useAtom, useAtomValue } from "jotai";
 import { useRef, useEffect, useMemo } from "react";
 
 const useAudioVisualizer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioAnalyzer = useMemo(() => new AudioAnalyzer(), []);
   const [config, setConfig] = useAtom(configState);
+  const mode = useAtomValue(themeState);
+
+  // 設定はストリームを再起動せずライブ反映する
+  useEffect(() => {
+    audioAnalyzer.setFrequencyRange(config.minFrequency, config.maxFrequency);
+    audioAnalyzer.setNoiseGate(config.noiseGate ?? 100);
+    audioAnalyzer.setLowPassCoefficient(config.lowPassConfig.cofficient);
+    audioAnalyzer.toggleLowPassFilter(config.lowPassConfig.isUse);
+    audioAnalyzer.setMovingAverageWindowSize(config.movingAverageConfig.windowSize);
+    audioAnalyzer.toggleMovingAverageFilter(config.movingAverageConfig.isUse);
+  }, [audioAnalyzer, config]);
 
   useEffect(() => {
-    audioAnalyzer.config.minFrequency = config.minFrequency;
-    audioAnalyzer.config.maxFrequency = config.maxFrequency;
-    audioAnalyzer.config.lowPassCoefficient = config.lowPassConfig.cofficient;
-    audioAnalyzer.toggleLowPassFilter(config.lowPassConfig.isUse);
-    audioAnalyzer.toggleMovingAverageFilter(config.movingAverageConfig.isUse);
-    audioAnalyzer.config.movingAverageWindowSize =
-      config.movingAverageConfig.windowSize;
+    audioAnalyzer.theme = mode === "dark" ? DARK_THEME : LIGHT_THEME;
+  }, [audioAnalyzer, mode]);
 
-    audioAnalyzer.getMicrophoneAudioStream(canvasRef);
-    return () => {
-      audioAnalyzer.close();
-    };
-  }, [
-    audioAnalyzer,
-    config.minFrequency,
-    config.maxFrequency,
-    config.lowPassConfig,
-    config.movingAverageConfig,
-  ]);
+  useEffect(() => {
+    audioAnalyzer.getMicrophoneAudioStream(canvasRef).catch(console.error);
+    return () => audioAnalyzer.close();
+  }, [audioAnalyzer]);
 
   return { canvasRef, audioAnalyzer, config, setConfig };
 };

@@ -1,139 +1,115 @@
 import useAudioVisualizer from "@/hooks/useAudioVisualizer";
 import { useEffect, useState } from "react";
 import MotorConfigurationModal from "../modal/MotorConfigurationModal";
-import { Button } from "antd";
-import Speedometer, {
-  Arc,
-  Background,
-  DangerPath,
-  Marks,
-  Needle,
-} from "react-speedometer/dist";
+import { Button, Segmented } from "antd";
+import Tachometer from "./tachometer";
 
 const MicrophoneFrequencyVisualizer: React.FC = () => {
   const { canvasRef, audioAnalyzer, config, setConfig } = useAudioVisualizer();
   const [maxFrequency, setMaxFrequency] = useState<number>(0);
   const [sharpestFrequency, setSharpestFrequency] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [canvasWidth, setCanvasWidth] = useState<number>(800);
 
   useEffect(() => {
-    const startAudioStream = async () => {
-      await audioAnalyzer.getMicrophoneAudioStream(canvasRef);
+    const onResize = () => {
+      const w = window.innerWidth - 32;
+      // 両方表示かつ広い画面: タコの右にグラフ / 狭い画面: タコの下にグラフ
+      const sideBySide = config.viewMode === "both" && window.innerWidth >= 1024;
+      setCanvasWidth(
+        Math.max(280, Math.min(sideBySide ? w - 460 : 1100, sideBySide ? 700 : w))
+      );
     };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [config.viewMode]);
 
-    startAudioStream();
-
-    const maxFrequencyGenerator = audioAnalyzer.getMaxFrequencyGenerator();
-    const sharpestChangeGenerator = audioAnalyzer.getSharpestChangeGenerator();
-
+  useEffect(() => {
+    const maxGen = audioAnalyzer.getMaxFrequencyGenerator();
+    const sharpGen = audioAnalyzer.getSharpestChangeGenerator();
     const interval = setInterval(() => {
-      const maxFreq = maxFrequencyGenerator.next().value;
-      const sharpFreq = sharpestChangeGenerator.next().value;
-
-      if (maxFreq) {
-        setMaxFrequency(maxFreq);
-      }
-      if (sharpFreq && sharpFreq !== null) {
-        setSharpestFrequency(sharpFreq.frequency || 0);
-      }
+      const maxFreq = maxGen.next().value;
+      const sharp = sharpGen.next().value;
+      // ゲート未満は null → 0 に落とす
+      setMaxFrequency(maxFreq ?? 0);
+      setSharpestFrequency(sharp?.frequency ?? 0);
     }, config.calcInterval);
+    return () => clearInterval(interval);
+  }, [audioAnalyzer, config.calcInterval]);
 
-    return () => {
-      clearInterval(interval);
-      audioAnalyzer.close();
-    };
-  }, [config.calcInterval]);
+  const freq = config.using_derivative ? sharpestFrequency : maxFrequency;
+  const rpm = Math.round(freq * 10);
+  const kmh = Math.round(
+    (Math.PI * config.tireDiameter * 0.001 * (maxFrequency * 10) * 60) /
+      config.gearRatio /
+      1000
+  );
+
   return (
-    <>
-      <div className="flex justify-center flex-wrap">
-        <canvas
-          style={{ display: config.viewMode === "graph" ? "block" : "none" }}
-          ref={canvasRef}
-          width={window.innerWidth - 20}
-          height={window.innerHeight / 2}
+    <main className="max-w-5xl mx-auto px-4 py-6">
+      <div className="flex justify-center mb-4">
+        <Segmented
+          value={config.viewMode}
+          onChange={(v) => setConfig({ ...config, viewMode: v as "graph" | "tachometer" | "both" })}
+          options={[
+            { label: "タコメーター", value: "tachometer" },
+            { label: "グラフ", value: "graph" },
+            { label: "両方", value: "both" },
+          ]}
         />
-        {config.viewMode === "tachometer" && (
-          <div className="pt-10">
-            <Speedometer
-              value={
-                Math.round(
-                  config.using_derivative
-                    ? sharpestFrequency * 10
-                    : maxFrequency * 10
-                ) / 1000
-              }
-              max={45}
-              fontFamily="squada-one"
-            >
-              <Background opacity={0.9} />
-              <Arc arcWidth={2} />
-              <Needle baseOffset={40} circleRadius={10} circleColor="red" />
-              <DangerPath color="#00A600" angle={150} arcWidth={5} />
-              <DangerPath color="#ffff00" angle={100} arcWidth={5} />
-              <DangerPath arcWidth={5} />
-              <Marks step={1.5} />
-            </Speedometer>
-          </div>
-        )}
       </div>
-      <div className="text-center mt-3">
-        <p
-          className={`${
-            config.using_derivative ? "text-blue-700" : "text-red-600"
-          } font-bold`}
+
+      <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-center">
+        {config.viewMode !== "graph" && <Tachometer value={rpm / 1000} />}
+        <canvas
+          className="rounded-2xl border border-slate-200 dark:border-white/10"
+          style={{ display: config.viewMode === "tachometer" ? "none" : "block" }}
+          ref={canvasRef}
+          width={canvasWidth}
+          height={Math.round(canvasWidth * 0.5)}
+        />
+      </div>
+
+      <div className="text-center mt-4">
+        <span
+          className={`inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest ${
+            config.using_derivative
+              ? "bg-sky-500/15 text-sky-500"
+              : "bg-orange-500/15 text-orange-500"
+          }`}
         >
           {config.using_derivative ? "DERIVATIVE MODE" : "MAX MODE"}
-        </p>
+        </span>
       </div>
-      <div className="flex justify-center my-8">
-        <div className="mr-4">
-          <span className="italic font-bold text-xl">
-            {Math.round(
-              config.using_derivative
-                ? sharpestFrequency * 10
-                : maxFrequency * 10
-            )}
-          </span>{" "}
-          rpm
-        </div>
-        <div className="">
-          <span className="italic font-bold text-xl">
-            {Math.round(
-              (Math.PI *
-                config.tireDiameter *
-                0.001 *
-                (maxFrequency * 10) *
-                60) /
-                config.gearRatio /
-                1000
-            )}
-          </span>{" "}
-          km/h{" "}
-        </div>
+
+      <div className="grid grid-cols-2 gap-3 max-w-md mx-auto my-6">
+        {[
+          { v: rpm.toLocaleString(), u: "rpm" },
+          { v: kmh.toLocaleString(), u: "km/h" },
+        ].map((s) => (
+          <div
+            key={s.u}
+            className="rounded-2xl p-4 text-center border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"
+          >
+            <div className="font-digital text-3xl font-bold text-orange-500">{s.v}</div>
+            <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400">{s.u}</div>
+          </div>
+        ))}
       </div>
+
       <div className="flex justify-center">
-        <Button className="" onClick={() => setModalOpen(true)}>
-          設定
-        </Button>
-        <Button
-          className="ml-3"
-          onClick={() =>
-            setConfig({
-              ...config,
-              viewMode: config.viewMode === "graph" ? "tachometer" : "graph",
-            })
-          }
-        >
-          {config.viewMode === "graph" ? "タコメーター" : "グラフ"}
-        </Button>
+        <Button onClick={() => setModalOpen(true)}>設定</Button>
       </div>
       <MotorConfigurationModal
         open={modalOpen}
         config={config}
         setOpen={setModalOpen}
+        onLearnNoise={() => audioAnalyzer.learnNoise(2000)}
+        onClearNoise={() => audioAnalyzer.clearNoise()}
         setConfig={setConfig}
       />
-    </>
+    </main>
   );
 };
 
